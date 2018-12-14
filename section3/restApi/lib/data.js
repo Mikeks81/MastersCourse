@@ -6,6 +6,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const Helpers = require('./helpers')
 
 class Data {
   // write data to a file 
@@ -35,7 +36,12 @@ class Data {
   // Read data from a file
   static read (dir, file, cb) {
     fs.readFile(`${this.baseDir}/${dir}/${file}.json`, 'utf-8', (err, data) => {
-      cb(err, data)
+      if (!err && data) {
+        const parsedData = Helpers.parseJsonToObject(data)
+        cb(false, parsedData)
+      } else {
+        cb(err, data)
+      }
     })
   }
 
@@ -45,7 +51,6 @@ class Data {
       if (!err && fileDescriptor) {
         // Convert data to string
         const stringData = JSON.stringify(data)
-
         // Truncate the file
         fs.truncate(fileDescriptor, (err) => {
           if (!err) {

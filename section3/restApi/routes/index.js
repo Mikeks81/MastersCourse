@@ -1,7 +1,8 @@
-const Handlers = require('./handlers')
+const Handlers = require('../lib/handlers')
 // Define a request router
 const routes = {
-  ping: Handlers.ping
+  ping: Handlers.ping,
+  users: Handlers.users
 }
 
 module.exports = routes

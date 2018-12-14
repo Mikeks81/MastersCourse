@@ -7,17 +7,11 @@ const http = require('http')
 const https = require('https')
 const url = require('url')
 const StringDecoder = require('string_decoder').StringDecoder
-const config = require('./config')
+const config = require('./lib/config')
 const routes = require('./routes')
-const Handlers = require('./routes/handlers')
+const Handlers = require('./lib/handlers')
 const fs = require('fs')
-const _data = require('./lib/data')
-
-// TESTING
-// @TODO delete this
-_data.create('test', 'newFile', {'foo': 'bar'}, (err) => {
-  console.log('this was the error ', err)
-})
+const Helpers = require('./lib/helpers')
 
 // instantiating the http Server
 const httpServer = http.createServer((req, res) => {
@@ -87,7 +81,7 @@ const unifiedServer = (req, res) => {
       queryStringObject,
       method,
       headers,
-      payload: buffer
+      payload: Helpers.parseJsonToObject(buffer)
     }
 
     // Route the request to the handler specified in the routes
