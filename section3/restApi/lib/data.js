@@ -78,7 +78,7 @@ class Data {
   static delete (dir, file, cb) {
     // Unlink (delete) the file
     fs.unlink(`${this.baseDir}/${dir}/${file}.json`, (err) => {
-      !err ? cb('false') : cb('Error deleting the file')
+      !err ? cb(false) : cb('Error deleting the file')
     })
   } 
 }
