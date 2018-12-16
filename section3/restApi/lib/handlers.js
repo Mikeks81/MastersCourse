@@ -23,6 +23,16 @@ class Handlers {
     }
   }
 
+  // Tokens hander
+  static tokens(data, callback) {
+    const acceptableMethods = ['post', 'get', 'put', 'delete']
+    if (acceptableMethods.indexOf(data.method) > -1) {
+      _Tokens[data.method](data, callback)
+    } else {
+      callback(405)
+    }
+  }
+
   // NotFound hanlder
   static notFound(data, callback) {
     // callback a http status code and a payload object
@@ -183,6 +193,60 @@ class _Users {
     } else {
       callback(400, { Error: 'Missing required fields' })
     }
+  }
+}
+
+// Class for all token requests
+class _Tokens {
+  // Tokens - POST
+  // Required data: phone, password
+  // Optional data: none
+  static post (data, callback) {
+    let { phone, password } = data.payload
+    phone = typeof (phone) === 'string' && phone.trim().length === 10 ? phone.trim() : false
+    password = typeof (password) === 'string' && password.trim().length > 0 ? password.trim() : false
+    if (phone && password) {
+      // Lookup user who matches that phone number 
+      Data.read('users', phone, (err, userData) => {
+        if (!err && userData) {
+          // Hash the sent password and compare it to the hashed password stored in the user object.
+          const hashedPassword = Helpers.hash(password)
+          if (hashedPassword === userData.password) {
+            // if valid, create a new token with a random name. Set expiration date 1 hour into the future.
+            const tokenId = Helpers.createRandomString(20)
+
+            const expires = Date.now() + 1000 * 60 * 60
+            const tokenObject = {phone, id: tokenId, expires}
+            // Store the token
+            Data.create('tokens', tokenId, tokenObject, err => {
+              if (!err) {
+                callback(200, tokenObject)
+              } else {
+                callback(500, {Error: 'Could not create a new token.'})
+              }
+            })
+          } else {
+            callback(400, {Error: 'Password did not match the specified user\'s stored password.'})
+          }
+        } else {
+          callback(400, {Error: 'Could not find the specified user.'})
+        }
+      })
+    } else {
+      callback(400, {Error: 'Missing required field(s)'})
+    }
+  }
+  // Tokens - GET
+  static get (data, callback) {
+
+  }
+  // Tokens - PUT
+  static put (data, callback) {
+
+  }
+  // Tokens - DELETE
+  static delete (data, callback) {
+
   }
 }
 
