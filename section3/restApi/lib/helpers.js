@@ -39,7 +39,7 @@ class Helpers {
 
       // Start the final string
       let str = ''
-      for (let i = 0; i <= strLength; i++) {
+      for (let i = 0; i <= strLength - 1; i++) {
         // Get a random character from the possibleCharacters string
         const randomCharacter = possibleCharacters.charAt(Math.floor(Math.random() * possibleCharacters.length)) 
         // Append this character to the final string
