@@ -4,6 +4,7 @@
 // Dependencies
 const Data = require('../lib/data')
 const Helpers = require('./helpers')
+const config = require('./config')
 
 // Defiine our Request handlers
 class Handlers {
@@ -24,10 +25,20 @@ class Handlers {
   }
 
   // Tokens hander
-  static tokens(data, callback) {
+  static tokens (data, callback) {
     const acceptableMethods = ['post', 'get', 'put', 'delete']
     if (acceptableMethods.indexOf(data.method) > -1) {
       _Tokens[data.method](data, callback)
+    } else {
+      callback(405)
+    }
+  }
+
+  // Tokens hander
+  static checks (data, callback) {
+    const acceptableMethods = ['post', 'get', 'put', 'delete']
+    if (acceptableMethods.indexOf(data.method) > -1) {
+      _Checks[data.method](data, callback)
     } else {
       callback(405)
     }
@@ -361,6 +372,98 @@ class _Tokens {
         callback(false)
       }
     })
+  }
+}
+
+class _Checks {
+  // Checks POST
+  // Required data: protocol, timeoutSeconds, method, successCodes, timeoutSeconds
+  // Optional data: none 
+  static post (data, callback) {
+    // Validate inputs
+    const acceptedProtocol = ['http', 'https']
+    const acceptedMethods = ['post', 'get', 'put', 'delete']
+    let { protocol, url, method, successCodes, timeoutSeconds } = data.payload
+    protocol = typeof (protocol) === 'string' && acceptedProtocol.indexOf(protocol) > -1 ? protocol : false
+    url = typeof (url) === 'string' && url.trim().length ? url.trim() : false
+    method = typeof (method) === 'string' && acceptedMethods.indexOf(method) > -1 ? method : false
+    successCodes = typeof (successCodes) === 'object' && successCodes instanceof Array && successCodes.length ? successCodes : false
+    timeoutSeconds = typeof (timeoutSeconds) === 'number' && timeoutSeconds % 1 === 0 && timeoutSeconds >= 1 && timeoutSeconds <= 5 ? timeoutSeconds : false
+
+    if (protocol && url && method && successCodes && timeoutSeconds) {
+      // Get the token from the headers
+      const token = typeof data.headers.token === 'string' ? data.headers.token : false
+
+      // Look up the user by reading the token
+      Data.read('tokens', token, (err, tokenData) => {
+        if (!err && tokenData) {
+          const userPhone = tokenData.phone
+
+          // Lookup the user data
+          Data.read('users', userPhone, (err, userData) => {
+            if (!err && userData) {
+              const userChecks = typeof userData.checks === 'object' && userData.checks instanceof Array ? userData.checks : []        
+
+              // Verify that the user has less than the max nubmer of checks allowed
+              if (userChecks.length < config.maxChecks) {
+                // Create a random id for the check
+                const checkId = Helpers.createRandomString(20)
+
+                // Create the check object, and include the users phone.
+                const checkObject = {
+                  id: checkId, userPhone, url, method, successCodes, timeoutSeconds
+                }
+
+                // Save the object
+                Data.create('checks', checkId, checkObject, (err) => {
+                  if (!err) {
+                    // add the check id to the user's object
+                    userData.checks = userChecks
+                    userData.checks.push(checkId)
+
+                    // Save the new user data
+                    Data.update('users', userPhone, userData, (err) => {
+                      if (!err) {
+                        // Return the data about the check
+                        callback(200, checkObject)
+                      } else {
+                        callback(500, {Error: 'Could not update the user with the new check'})
+                      }
+                    })
+
+                  } else {
+                    callback(500, {Error: 'Could not create the check.'})
+                  }
+                })
+              } else {
+                callback(400, {Error: 'The user already has the maximum number of checks (' + config.maxChecks + ')'})
+              }
+            } else {
+              callback(403)
+            }
+          })
+        } else {
+          callback(403)
+        }
+      })
+
+    } else {
+      callback(400, {Error: 'Missing required inputs or inputs are invalid.'})
+    }
+
+
+  }
+  // Checks GET
+  static get () {
+
+  }
+  // Checks PUT
+  static put () {
+
+  }
+  // Checks DELETE
+  static delete () {
+
   }
 }
 

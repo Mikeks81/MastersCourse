@@ -3,7 +3,8 @@ const Handlers = require('../lib/handlers')
 const routes = {
   ping: Handlers.ping,
   users: Handlers.users,
-  tokens: Handlers.tokens
+  tokens: Handlers.tokens,
+  checks: Handlers.checks
 }
 
 module.exports = routes
