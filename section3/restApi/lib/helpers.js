@@ -4,6 +4,8 @@
 
 // Dependencies
 const crypto = require('crypto')
+const querystring = require('querystring')
+const https = require('https')
 const config = require('./config')
 
 // Container for all the helpers
@@ -50,6 +52,62 @@ class Helpers {
       return str
     } else {
       return false
+    }
+  }
+
+  static sendTwilioSms (phone, msg, callback) {
+    phone = phone.trim()
+    msg = msg.trim()
+    // Validate parameters
+    phone = typeof phone === 'string' && phone.length === 10 ? phone : false
+    msg = typeof msg === 'string' && msg.length > 0  && msg.length <= 1600 ? msg : false
+    if (phone && msg) {
+      // Configure the request payload
+      const payload = {
+        'From': config.twilio.fromPhone,
+        'To': `+1${phone}`,
+        'Body': msg
+      }
+      // Stringify the payload
+      // Not the same as a JSON stringify - this is a URL stringify
+      const stringPayload = querystring.stringify(payload)
+      // Configure the request details
+      const requestDetails = {
+        protocol: 'https:',
+        hostname: 'api.twilio.com',
+        method: 'POST',
+        path: `/2010-04-01/Accounts/${config.twilio.accountSid}/Messages.json`,
+        auth: `${config.twilio.accountSid}:${config.twilio.authToken}`,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(stringPayload)
+        }
+      }
+
+      // Instantiate the request object
+      const req = https.request(requestDetails, (res) => {
+        // Grab the status of the sent request
+        const status = res.statusCode
+        // Callback successfully if the request went through
+        if (status === 200 || status === 201) {
+          callback(false)
+        } else {
+          callback(`Status code returned was: ${status}`)
+        }
+      })
+
+      // Bind to the erro event so it doesn't get thrown
+      req.on('error', (e) => {
+        callback(e)
+      })
+
+      // Add the payload
+      req.write(stringPayload)
+
+      // End the request | same as sending the request
+      req.end()
+    } else {
+      callback('Given parameters are missing or invalid.')
     }
   }
 }
