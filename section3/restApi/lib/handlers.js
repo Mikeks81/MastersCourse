@@ -414,7 +414,6 @@ class _Checks {
     method = typeof (method) === 'string' && acceptedMethods.indexOf(method) > -1 ? method : false
     successCodes = typeof (successCodes) === 'object' && successCodes instanceof Array && successCodes.length ? successCodes : false
     timeoutSeconds = typeof (timeoutSeconds) === 'number' && timeoutSeconds % 1 === 0 && timeoutSeconds >= 1 && timeoutSeconds <= 5 ? timeoutSeconds : false
-    console.log(protocol, url, method, successCodes, timeoutSeconds)
     if (protocol && url && method && successCodes && timeoutSeconds) {
       // Get the token from the headers
       const token = typeof data.headers.token === 'string' ? data.headers.token : false

@@ -9,6 +9,20 @@ const path = require('path')
 const Helpers = require('./helpers')
 
 class Data {
+  // List all of the items in a director
+  static list (dir, cb) {
+    fs.readdir(`${this.baseDir}/${dir}/`, (err, data) => {
+      if (!err && data && data.length) {
+        const trimmedFileNames = []
+        data.forEach((fileName) => {
+          trimmedFileNames.push(fileName.replace('.json', ''))
+        })
+        cb(false, trimmedFileNames)
+      } else {
+        cb(err, data)
+      }
+    })
+  }
   // write data to a file 
   static create (dir, file, data, cb) {
     // Open the file for writing
